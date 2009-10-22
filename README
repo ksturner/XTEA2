@@ -29,3 +29,6 @@ exchange using a trusted mechanism. In addition, you should always use a random
 IV to seed the key generator (the IV is not sensitive and does not need to be
 exchanged securely)
 
+
+There is an example.py script that demonstrates basic use of the xtea2 package
+by encrypting and decrypting files. (see python example.py --help)

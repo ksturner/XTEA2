@@ -1,4 +1,24 @@
 #!/usr/bin/env python
+"""
+usage:     example.py [OPTIONS] 
+
+Options:
+        --encrypt=FILENAME     
+            Encrypts the file after prompting for a password.
+
+        --decrypt=FILENAME
+            Decrypts the file after prompting for password.
+
+This program does a few extra things in addition to using the xtea2 module.
+First, it generates a random initialization vector (IV), which is necessary for
+the XTEA algorithm. After encrypting the file, this IV is saved as a file
+alongside the encrypted file , and the two are packaged up in a BOX file (with
+.box suffix), which is nothing more than a tar file of the two files. 
+
+Upon decrypting the BOX file, the IV necessary to decrypt the file is unpacked,
+the user is prompted for the password, and the decryption is performed.
+
+"""
 import os, sys, getopt, random, getpass, hashlib, tarfile
 import xtea2
 
