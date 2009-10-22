@@ -6,19 +6,12 @@ static PyObject *Xtea2Error;
 static PyObject* xtea2_getrandomiv(PyObject *self, PyObject *args); 
 static PyObject* xtea2_crypt(PyObject *self, PyObject *args); 
 static PyObject* xtea2_cryptfile(PyObject *self, PyObject *args); 
-static PyObject* xtea2_encipher(PyObject *self, PyObject *args);
-static PyObject* xtea2_decipher(PyObject *self, PyObject *args); 
-static void encipher(unsigned int num_rounds, uint32_t* v, uint32_t* k); 
-static void encipher2(uint32_t num_rounds, uint32_t* v, uint32_t* k); 
-static void decipher(uint32_t num_rounds, uint32_t* v, uint32_t* k); 
-static void decipher2(uint32_t num_rounds, uint32_t* v, uint32_t* k); 
+static void encipher(uint32_t num_rounds, uint32_t* v, uint32_t* k); 
 
 static PyMethodDef Xtea2Methods[] = {
 	{ "crypt", xtea2_crypt, METH_VARARGS, "Encrypt/decrypt data."},
 	{ "cryptfile", xtea2_cryptfile, METH_VARARGS, "Encrypt/decrypt files."},
 	{ "getRandomIV", xtea2_getrandomiv, METH_VARARGS, "Gets random IV string."},
-	{ "encipher", xtea2_encipher, METH_VARARGS, "Encrypt data."},
-	{ "decipher", xtea2_decipher, METH_VARARGS, "Decrypt data."},
 	{ NULL, NULL, 0, NULL}	/* Sentinel */
 };
 
@@ -90,7 +83,7 @@ static PyObject* xtea2_crypt(PyObject *self, PyObject *args) {
 
 	input_buffer = iv;
 	for (counter=0; counter < len; counter+=8) {
-		encipher2((uint32_t)n, (uint32_t*)input_buffer, (uint32_t*)key);
+		encipher((uint32_t)n, (uint32_t*)input_buffer, (uint32_t*)key);
 
 		memcpy((uint8_t*)buffer, (uint8_t*)(newdata + counter), (size_t)8);
 		for(i=0;i<8;i++) {
@@ -131,7 +124,7 @@ static PyObject* xtea2_cryptfile(PyObject *self, PyObject *args) {
 
 	bytes_read = fread((uint8_t*)buffer, sizeof(uint8_t), 8, fd_in);
 	while (bytes_read > 0) {
-		encipher2((uint32_t)n, (uint32_t*)input_buffer, (uint32_t*)key);
+		encipher((uint32_t)n, (uint32_t*)input_buffer, (uint32_t*)key);
 		for(i=0;i<8;i++) {
 			buffer2[i] = (uint8_t)buffer[i] ^ (uint8_t)input_buffer[i]; 
 		} 
@@ -145,114 +138,13 @@ static PyObject* xtea2_cryptfile(PyObject *self, PyObject *args) {
 }
 
 /*----------------------------------------------------------------------------*/
-static PyObject* xtea2_encipher(PyObject *self, PyObject *args) {
-	char *newdata;
-	const char *key;
-	int n = 0;
-	long counter = 0, len = 0;
-	char buffer[8];
-	PyObject *resultString;
-	PyObject *stringObject;
-
-	if (!PyArg_ParseTuple(args, "Osi", &stringObject, &key, &n)) {
-		return NULL;
-	}
-	if (!PyString_Check(stringObject)) {
-		return NULL;	
-	}
-
-	len = (long)PyString_Size(stringObject);
-	newdata = malloc(len);
-	if (newdata == NULL) return NULL;
-
-	memcpy(newdata, PyString_AsString(stringObject), len);
-
-	for (counter=0; counter < len; counter+=8) {
-		memcpy(buffer, newdata + counter, 8);
-		encipher((uint32_t)n, (uint32_t*)buffer, (uint32_t*)key);
-		memcpy(newdata + counter, buffer, 8);
-	}
-
-	resultString = PyString_FromStringAndSize(newdata, len);
-	free(newdata);
-	return resultString;
-}
-
-/*----------------------------------------------------------------------------*/
-static PyObject* xtea2_decipher(PyObject *self, PyObject *args) {
-	char *newdata;
-	const char *key;
-	int n = 0;
-	long counter = 0, len = 0;
-	char buffer[8];
-	PyObject *resultString;
-	PyObject *stringObject;
-
-	if (!PyArg_ParseTuple(args, "Osi", &stringObject, &key, &n)) {
-		return NULL;
-	}
-	if (!PyString_Check(stringObject)) {
-		return NULL;	
-	}
-
-	len = (long)PyString_Size(stringObject);
-	newdata = malloc(len);
-	if (newdata == NULL) return NULL;
-	memcpy(newdata, PyString_AsString(stringObject), len);
-
-	for (counter=0; counter < len; counter+=8) {
-		memcpy(buffer, newdata + counter, 8);
-		decipher((uint32_t)n, (uint32_t*)buffer, (uint32_t*)key);
-		memcpy(newdata + counter, buffer, 8);
-	}
-	resultString = PyString_FromStringAndSize(newdata, len);
-	free(newdata);
-	return resultString;
-}
-
-/*----------------------------------------------------------------------------*/
 static void encipher(uint32_t num_rounds, uint32_t* v, uint32_t* k) {
-	uint32_t v0=v[0], v1=v[1], i;
-	uint32_t sum=0, delta=0x9E3779B9; 
-	for(i=0; i<num_rounds; i++) {
-		v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + k[sum & 3]);
-		sum += delta;
-		v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + k[(sum>>11) & 3]);
-	}
-	v[0]=v0; v[1]=v1;
-}
-/*----------------------------------------------------------------------------*/
-static void encipher2(uint32_t num_rounds, uint32_t* v, uint32_t* k) {
 	uint32_t v0=v[0], v1=v[1], i;
 	uint32_t sum=0, delta=0x9E3779B9, mask=0xFFFFFFFF;
 	for(i=0; i<num_rounds; i++) {
 		v0 = (v0+((((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + k[sum & 3]))) & mask;
 		sum = (sum + delta) & mask;
 		v1 = (v1+((((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + k[(sum>>11) & 3]))) & mask;
-	}
-	v[0]=v0; v[1]=v1;
-}
-
- 
-/*----------------------------------------------------------------------------*/
-static void decipher(uint32_t num_rounds, uint32_t* v, uint32_t* k) {
-	uint32_t v0=v[0], v1=v[1], i;
-	uint32_t delta=0x9E3779B9, sum=delta*num_rounds;
-	for(i=0; i<num_rounds; i++) {
-		v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + k[(sum>>11) & 3]);
-		sum -= delta;
-		v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + k[sum & 3]);
-	}
-	v[0]=v0; v[1]=v1;
-}
-/*----------------------------------------------------------------------------*/
-static void decipher2(uint32_t num_rounds, uint32_t* v, uint32_t* k) {
-	uint32_t v0=v[0], v1=v[1], i;
-	uint32_t delta=0x9E3779B9, sum=delta*num_rounds, mask=0xFFFFFFFF;;
-	for(i=0; i<num_rounds; i++) {
-		v1 = (v1-((((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + k[(sum>>11) & 3]))) & mask;
-		sum = (sum - delta) & mask;
-		v0 = (v0-((((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + k[sum & 3]))) & mask;
 	}
 	v[0]=v0; v[1]=v1;
 }

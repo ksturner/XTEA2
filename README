@@ -1,1 +1,31 @@
 Efficient implementation of the XTEA encryption algorithm.
+
+Author: Kevin Turner (kevin@ksturner.com)
+License: GPL v3
+
+This module has been compiled and tested under Python 2.5 and 2.6, but not
+Python 3.
+
+This package provides a C-based implementation of the XTEA block encryption
+algorithm (http://www.cix.co.uk/~klockstone/xtea.pdf). It is very similar to
+the Python implementation of the XTEA algorithm by Paul Chakravarti 
+(http://code.activestate.com/recipes/496737/), but is suitable for encrypting
+large amounts of data fast.
+
+The module implements the basic XTEA block encryption algortithm function which
+symmetrically encrypts/decrypts a variable length string using XTEA in OFB mode
+as a key generator. 
+
+This module is intended to provide a simple, but very fast, 'privacy-grade'
+Python encryption algorithm with no external dependencies. Note that the XTEA
+algorithm has not been subjected to extensive analysis (though is believed to
+be relatively secure - see http://en.wikipedia.org/wiki/XTEA). For applications
+requiring 'real' security please use a known and well tested
+algorithm/implementation.
+
+The security of the algorithm is entirely based on quality (entropy) and
+secrecy of the key. You should generate the key from a known random source and
+exchange using a trusted mechanism. In addition, you should always use a random
+IV to seed the key generator (the IV is not sensitive and does not need to be
+exchanged securely)
+
