@@ -3,6 +3,15 @@ Efficient implementation of the XTEA encryption algorithm.
 Author: Kevin Turner (kevin@ksturner.com)
 License: GPL v3
 
+DISCLAIMER:
+--------------------------------------------------------------------------------
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+IF YOU READ ONE THING IN HERE, READ THIS
+--------------------------------------------------------------------------------
+
 This module has been compiled and tested under Python 2.5 and 2.6, but not
 Python 3.
 
